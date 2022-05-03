@@ -66,9 +66,13 @@ func SetupVethWithNames(lxcIfName, tmpIfName string, mtu int, ep *models.Endpoin
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to generate rnd mac addr: %s", err)
 	}
-	epLXCMAC, err = mac.GenerateRandMAC()
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to generate rnd mac addr: %s", err)
+	if ep.Mac != "" {
+		epLXCMAC = mac.MAC(ep.Mac)
+	} else {
+		epLXCMAC, err = mac.GenerateRandMAC()
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to generate rnd mac addr: %s", err)
+		}
 	}
 
 	veth := &netlink.Veth{
