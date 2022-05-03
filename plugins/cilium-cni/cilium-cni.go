@@ -377,6 +377,8 @@ func cmdAdd(args *skel.CmdArgs) (err error) {
 		return
 	}
 
+	mac := string(cniArgs.MAC)
+
 	if ipam.Address == nil {
 		err = fmt.Errorf("Invalid IPAM response, missing addressing")
 		return
@@ -402,7 +404,7 @@ func cmdAdd(args *skel.CmdArgs) (err error) {
 		Addressing:   &models.AddressPair{},
 		K8sPodName:   string(cniArgs.K8S_POD_NAME),
 		K8sNamespace: string(cniArgs.K8S_POD_NAMESPACE),
-		Mac:          n.Mac,
+		Mac:          mac,
 	}
 
 	switch conf.DatapathMode {

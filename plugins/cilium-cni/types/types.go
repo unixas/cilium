@@ -113,6 +113,7 @@ func LoadNetConf(bytes []byte, envArgs string) (*NetConf, error) {
 type ArgsSpec struct {
 	cniTypes.CommonArgs
 	IP                         net.IP
+	MAC                        string
 	K8S_POD_NAME               cniTypes.UnmarshallableString
 	K8S_POD_NAMESPACE          cniTypes.UnmarshallableString
 	K8S_POD_INFRA_CONTAINER_ID cniTypes.UnmarshallableString
