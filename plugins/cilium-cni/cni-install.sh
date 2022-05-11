@@ -195,6 +195,9 @@ EOF
 {
   "cniVersion": "0.3.1",
   "name": "cilium",
+  "capabilities": {
+    "mac": true
+  },
   "type": "cilium-cni",
   "enable-debug": ${ENABLE_DEBUG}
 }
