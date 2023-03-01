@@ -30,6 +30,7 @@ import (
 	"github.com/eapache/channels"
 	"github.com/osrg/gobgp/v3/internal/pkg/config"
 	"github.com/osrg/gobgp/v3/internal/pkg/table"
+	"github.com/osrg/gobgp/v3/internal/pkg/version"
 	"github.com/osrg/gobgp/v3/pkg/log"
 	"github.com/osrg/gobgp/v3/pkg/packet/bgp"
 	"github.com/osrg/gobgp/v3/pkg/packet/bmp"
@@ -493,7 +494,7 @@ func (h *fsmHandler) connectLoop(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	fsm := h.fsm
 
-	retry, addr, port, password, ttl, ttlMin, localAddress, bindInterface := func() (int, string, int, string, uint8, uint8, string, string) {
+	retry, addr, port, password, ttl, ttlMin, localAddress, localPort, bindInterface := func() (int, string, int, string, uint8, uint8, string, int, string) {
 		fsm.lock.RLock()
 		defer fsm.lock.RUnlock()
 
@@ -520,7 +521,7 @@ func (h *fsmHandler) connectLoop(ctx context.Context, wg *sync.WaitGroup) {
 				ttl = fsm.pConf.EbgpMultihop.Config.MultihopTtl
 			}
 		}
-		return tick, addr, port, password, ttl, ttlMin, fsm.pConf.Transport.Config.LocalAddress, fsm.pConf.Transport.Config.BindInterface
+		return tick, addr, port, password, ttl, ttlMin, fsm.pConf.Transport.Config.LocalAddress, int(fsm.pConf.Transport.Config.LocalPort), fsm.pConf.Transport.Config.BindInterface
 	}()
 
 	tick := minConnectRetryInterval
@@ -542,7 +543,7 @@ func (h *fsmHandler) connectLoop(ctx context.Context, wg *sync.WaitGroup) {
 					"Key":   addr})
 		}
 
-		laddr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(localAddress, "0"))
+		laddr, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(localAddress, strconv.Itoa(localPort)))
 		if err != nil {
 			fsm.logger.Warn("failed to resolve local address",
 				log.Fields{
@@ -727,6 +728,11 @@ func capabilitiesFromConfig(pConf *config.Neighbor) []bgp.ParameterCapabilityInt
 	caps := make([]bgp.ParameterCapabilityInterface, 0, 4)
 	caps = append(caps, bgp.NewCapRouteRefresh())
 	caps = append(caps, bgp.NewCapFQDN(fqdn, ""))
+
+	if pConf.Config.SendSoftwareVersion || pConf.Config.PeerType == config.PEER_TYPE_INTERNAL {
+		softwareVersion := fmt.Sprintf("GoBGP/%s", version.Version())
+		caps = append(caps, bgp.NewCapSoftwareVersion(softwareVersion))
+	}
 
 	for _, af := range pConf.AfiSafis {
 		caps = append(caps, bgp.NewCapMultiProtocol(af.State.Family))
